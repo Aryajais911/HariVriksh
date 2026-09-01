@@ -9,12 +9,24 @@
 [![MongoDB](https://img.shields.io/badge/Database-MongoDB_Atlas-47A248.svg?style=for-the-badge&logo=mongodb)](https://mongodb.com)
 [![AI Integration](https://img.shields.io/badge/AI-Google_Gemini-4285F4.svg?style=for-the-badge&logo=google)](https://deepmind.google/technologies/gemini/)
 
+<br/>
+
+<p align="center">
+  <a href="http://localhost:3000" target="_blank">
+    <img src="https://img.shields.io/badge/🌐_LIVE_DEMO-Launch_App-2ea44f?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live App Demo" height="42"/>
+  </a>
+  &nbsp;&nbsp;
+  <a href="http://localhost:5000/api/health" target="_blank">
+    <img src="https://img.shields.io/badge/⚡_API_HEALTH-Check_Status-007ACC?style=for-the-badge&logo=express&logoColor=white" alt="API Health Status" height="42"/>
+  </a>
+</p>
+
 <p align="center">
   <b>Transforming Urban Spaces into Thriving Green Sanctuaries</b><br/>
   An intelligent, end-to-end platform tailored for terrace gardens, container matching, organic soil mix recipes, and AI-powered plant health diagnosis.
 </p>
 
-[Explore Features](#-key-features) • [Plant Catalog](#-plant-catalog--dataset) • [Tech Stack](#-technology-stack) • [Quick Start](#-getting-started) • [API Guide](#-api-endpoints)
+[🚀 Launch Live App](http://localhost:3000) • [Explore Features](#-key-features) • [Plant Catalog](#-plant-catalog--dataset) • [Tech Stack](#-technology-stack) • [Quick Start](#-getting-started) • [API Guide](#-api-endpoints)
 
 ---
 
