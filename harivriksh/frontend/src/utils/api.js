@@ -51,6 +51,7 @@ export const getPost = (id) => API.get(`/posts/${id}`);
 export const createPost = (data) => API.post('/posts', data);
 export const likePost = (id) => API.post(`/posts/${id}/like`);
 export const addComment = (id, data) => API.post(`/posts/${id}/comments`, data);
+export const markCommentSolution = (id, commentId) => API.post(`/posts/${id}/comments/${commentId}/solution`);
 export const deletePost = (id) => API.delete(`/posts/${id}`);
 
 // Reminders
@@ -61,6 +62,9 @@ export const deleteReminder = (id) => API.delete(`/reminders/${id}`);
 
 // Soil
 export const getSoilGuides = () => API.get('/soil');
+export const getSoilPlantsList = () => API.get('/soil/plants/list');
+export const getSoilRecommendation = (plantId) => API.get(`/soil/recommend/${plantId}`);
+export const getCategoryComposts = () => API.get('/soil/category-guides');
 
 export default API;
 

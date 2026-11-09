@@ -19,9 +19,14 @@ const plantSchema = new mongoose.Schema({
   }],
   soilMix: {
     recipe: String,
+    npkRatio: { n: Number, p: Number, k: Number },
+    phRange: { min: Number, max: Number },
+    soilTexture: String,
+    organicMatterPct: Number,
     components: [{
       name: String,
-      percentage: Number
+      percentage: Number,
+      color: String
     }]
   },
   fertilizerSchedule: [{
@@ -35,7 +40,10 @@ const plantSchema = new mongoose.Schema({
     step: Number,
     title: String,
     description: String,
-    duration: String
+    duration: String,
+    tools: [String],
+    proTip: String,
+    commonMistake: String
   }],
   commonProblems: [{
     problem: String,
@@ -45,6 +53,14 @@ const plantSchema = new mongoose.Schema({
   benefits: [String],
   seasons: [{ type: String, enum: ['spring', 'summer', 'monsoon', 'autumn', 'winter', 'all'] }],
   tags: [String],
+  varieties: [{
+    name: { type: String, required: true },
+    type: { type: String, default: 'Standard' },
+    description: { type: String },
+    bestForContainers: { type: Boolean, default: true },
+    harvestDays: { min: Number, max: Number },
+    yieldNotes: { type: String }
+  }],
   rating: { type: Number, default: 4.5 },
   reviewCount: { type: Number, default: 0 }
 }, { timestamps: true });

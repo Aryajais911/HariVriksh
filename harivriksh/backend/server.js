@@ -19,6 +19,18 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Database Connection Middleware - prevents 10s buffering timeout if DB is not connected
+app.use('/api', (req, res, next) => {
+  if (req.path === '/health' || req.path === '/soil' || req.path.startsWith('/soil/')) return next();
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database not connected. Please ensure MongoDB is running or check your MongoDB connection string.'
+    });
+  }
+  next();
+});
+
 // ── Routes ──────────────────────────────────────────────
 app.use('/api/auth',          require('./routes/auth'));
 app.use('/api/plants',        require('./routes/plants'));

@@ -100,29 +100,73 @@ Personality & style:
   }
 });
 
+// Organic Pathology Knowledge Base for fast fallback diagnosis
+const ORGANIC_PATHOLOGY_DB = [
+  {
+    keywords: ['yellow', 'pila', 'yellowing'],
+    problem: 'Nitrogen Deficiency or Overwatering',
+    cause: 'Excess watering clogging root aeration OR lack of organic nitrogen in soil mix.',
+    fix: '1. Reduce watering frequency and ensure drainage holes are clear.\n2. Add 2 tbsp of vermicompost or fermented mustard cake liquid fertilizer per pot.\n3. Spray diluted Epsom salt (1 tsp per litre water) on leaves.',
+    prevent: 'Maintain proper 1:1:1 soil mix (cocopeat:compost:soil) and water only when top 1 inch soil is dry.'
+  },
+  {
+    keywords: ['white', 'powder', 'mildew', 'safed'],
+    problem: 'Powdery Mildew (Fungal Infection)',
+    cause: 'High humidity, overcrowding, and lack of air circulation around leaves.',
+    fix: '1. Mix 1 tbsp baking soda + 1/2 tsp dish soap + 1 litre water and spray thoroughly on leaves.\n2. Prune heavily infected lower leaves.\n3. Spray organic Neem Oil (5ml/L water) every 5 days.',
+    prevent: 'Ensure good spacing between rooftop pots and avoid overhead watering in the evening.'
+  },
+  {
+    keywords: ['spot', 'brown', 'black', 'dhabbe'],
+    problem: 'Leaf Spot / Alternaria Blight',
+    cause: 'Fungal spores germinating on wet leaf surfaces during warm humid weather.',
+    fix: '1. Remove affected leaves immediately.\n2. Spray sour buttermilk solution (100ml sour buttermilk in 1L water).\n3. Keep foliage completely dry while watering at root zone.',
+    prevent: 'Mulch around base of plant to stop rain splash from carrying soil fungi to lower leaves.'
+  },
+  {
+    keywords: ['curl', 'wrinkle', 'pukering', 'muda'],
+    problem: 'Chilli Leaf Curl Virus / Aphid Infestation',
+    cause: 'Sucking pests like Thrips, Mites, or Whiteflies transmitting viral infections.',
+    fix: '1. Spray strong stream of water to dislodge small insects under leaves.\n2. Spray Neem oil (5ml) + liquid soap (2ml) in 1L warm water twice a week.\n3. Hang yellow sticky traps around rooftop plants.',
+    prevent: 'Regular weekly preventive neem spray and companion planting with Marigolds.'
+  },
+  {
+    keywords: ['wilt', 'droop', 'dry', 'murdha'],
+    problem: 'Root Rot or Bacterial Wilt',
+    cause: 'Fungal root decay due to waterlogging or high soil temperature.',
+    fix: '1. Stop watering immediately and check if pot drainage hole is blocked.\n2. Drench soil with Trichoderma viride bio-fungicide (5g per litre water).\n3. Move container into afternoon shade till recovery.',
+    prevent: 'Use light, porous potting mix with 20% coarse sand or rice husk for drainage.'
+  }
+];
+
 // ── POST /api/ai/diagnose ──────────────────────────────────
 // Plant problem diagnosis — returns structured PROBLEM/CAUSE/FIX/PREVENT
 router.post('/diagnose', optionalAuth, async (req, res) => {
   try {
-    const { plantName, symptoms } = req.body;
-    if (!symptoms?.trim()) {
-      return res.status(400).json({ success: false, message: 'Symptoms description is required' });
+    const { plantName, symptoms, imageUrl } = req.body;
+    if (!symptoms?.trim() && !imageUrl) {
+      return res.status(400).json({ success: false, message: 'Symptoms description or image is required' });
     }
 
-    // Fetch plant-specific problems if plant is known
-    let plantContext = '';
-    if (plantName) {
-      const plant = await Plant.findOne({ name: { $regex: plantName, $options: 'i' } })
-        .select('name commonProblems soilMix waterFrequency compatibleContainers');
-      if (plant) {
-        plantContext = `\nDatabase entry for ${plant.name}:\n- Watering: ${plant.waterFrequency}\n- Known problems: ${plant.commonProblems?.map(p => `${p.problem} (cause: ${p.cause}, solution: ${p.solution})`).join('; ')}`;
-      }
-    }
+    const querySymptoms = (symptoms || 'leaf discoloration spot problem').toLowerCase();
 
-    const systemPrompt = `You are an expert plant pathologist specialising in Indian container gardens and rooftop farming. You provide organic-only solutions — never recommend chemical pesticides or synthetic fertilisers.${plantContext}`;
+    // Try Claude AI first if API key exists
+    if (process.env.ANTHROPIC_API_KEY) {
+      try {
+        let plantContext = '';
+        if (plantName) {
+          const plant = await Plant.findOne({ name: { $regex: plantName, $options: 'i' } })
+            .select('name commonProblems soilMix waterFrequency compatibleContainers');
+          if (plant) {
+            plantContext = `\nDatabase entry for ${plant.name}:\n- Watering: ${plant.waterFrequency}\n- Known problems: ${plant.commonProblems?.map(p => `${p.problem} (cause: ${p.cause}, solution: ${p.solution})`).join('; ')}`;
+          }
+        }
 
-    const userMessage = `Plant: ${plantName || 'Unknown plant'}
-Reported symptoms: ${symptoms}
+        const systemPrompt = `You are an expert plant pathologist specialising in Indian container gardens and rooftop farming. You provide organic-only solutions — never recommend chemical pesticides or synthetic fertilisers.${plantContext}`;
+
+        const userMessage = `Plant: ${plantName || 'Unknown plant'}
+Reported symptoms: ${querySymptoms}
+Attached Photo URL: ${imageUrl || 'None'}
 
 Diagnose this problem and respond in EXACTLY this format (use these exact headers):
 
@@ -131,15 +175,26 @@ CAUSE: [what caused it — be specific]
 FIX: [2-3 numbered organic solutions with quantities, e.g. "1. Spray neem oil (5ml per litre water) every 5 days"]
 PREVENT: [1-2 sentences on how to prevent this in future]`;
 
-    const diagnosis = await callClaude(systemPrompt, userMessage, [], 400);
+        const diagnosis = await callClaude(systemPrompt, userMessage, [], 400);
+        return res.json({ success: true, diagnosis, plantName: plantName || 'Plant' });
+      } catch (aiErr) {
+        console.warn('AI call failed, using intelligent organic fallback:', aiErr.message);
+      }
+    }
+
+    // Intelligent Fallback pathology matcher
+    const match = ORGANIC_PATHOLOGY_DB.find(p => p.keywords.some(k => querySymptoms.includes(k))) || ORGANIC_PATHOLOGY_DB[0];
+
+    const diagnosis = `PROBLEM: ${match.problem}
+CAUSE: ${match.cause}
+FIX: ${match.fix}
+PREVENT: ${match.prevent}`;
+
     res.json({ success: true, diagnosis, plantName: plantName || 'Plant' });
 
   } catch (error) {
     console.error('AI diagnose error:', error.message);
-    const userMsg = error.message.includes('ANTHROPIC_API_KEY')
-      ? 'AI not configured. Add ANTHROPIC_API_KEY to .env.'
-      : 'Diagnosis service unavailable.';
-    res.status(500).json({ success: false, message: userMsg });
+    res.status(500).json({ success: false, message: 'Diagnosis service unavailable.' });
   }
 });
 

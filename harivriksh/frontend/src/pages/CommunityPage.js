@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 
 const CATEGORIES = [
   { value: 'all', label: '🌿 All', color: 'var(--green-600)' },
+  { value: 'disease_solution', label: '🩺 Disease & Solution', color: '#854d0e' },
   { value: 'tip', label: '💡 Tips', color: '#d97706' },
   { value: 'question', label: '❓ Questions', color: 'var(--blue)' },
   { value: 'harvest', label: '🌾 Harvests', color: '#16a34a' },
@@ -13,7 +14,14 @@ const CATEGORIES = [
   { value: 'general', label: '💬 General', color: 'var(--gray-600)' },
 ];
 
-const CATEGORY_COLORS = { tip: '#fef3c7', question: '#dbeafe', harvest: 'var(--green-100)', problem: '#fee2e2', general: 'var(--gray-100)' };
+const CATEGORY_COLORS = {
+  disease_solution: '#fefce8',
+  tip: '#fef3c7',
+  question: '#dbeafe',
+  harvest: 'var(--green-100)',
+  problem: '#fee2e2',
+  general: 'var(--gray-100)'
+};
 
 const PostCard = ({ post, onLike }) => {
   const { user } = useAuth();
@@ -41,18 +49,39 @@ const PostCard = ({ post, onLike }) => {
             <p style={{ fontSize: 12, color: 'var(--gray-400)' }}>{post.author?.city} · {timeAgo(post.createdAt)}</p>
           </div>
         </div>
-        {post.category && (
-          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 'var(--radius-full)', background: CATEGORY_COLORS[post.category] || 'var(--gray-100)', color: 'var(--gray-700)', textTransform: 'capitalize' }}>
-            {post.category}
-          </span>
-        )}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {post.isSolved && (
+            <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 'var(--radius-full)', background: '#dcfce7', color: '#15803d', border: '1px solid #86efac' }}>
+              ✅ SOLVED
+            </span>
+          )}
+          {post.category && (
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 'var(--radius-full)', background: CATEGORY_COLORS[post.category] || 'var(--gray-100)', color: 'var(--gray-800)', textTransform: 'capitalize' }}>
+              {post.category === 'disease_solution' ? '🩺 Disease & Fix' : post.category}
+            </span>
+          )}
+        </div>
       </div>
 
       <Link to={`/community/${post._id}`} style={{ textDecoration: 'none' }}>
         <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600, color: 'var(--gray-900)', marginBottom: 8, lineHeight: 1.3 }}>{post.title}</h3>
-        <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.7, marginBottom: 16 }}>
+        <p style={{ fontSize: 14, color: 'var(--gray-500)', lineHeight: 1.7, marginBottom: 14 }}>
           {post.content?.slice(0, 140)}{post.content?.length > 140 ? '...' : ''}
         </p>
+
+        {/* Post Image Thumbnails */}
+        {post.images && post.images.length > 0 && (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14, overflowX: 'auto' }}>
+            {post.images.map((img, i) => (
+              <img
+                key={i}
+                src={img}
+                alt={`Post attachment ${i + 1}`}
+                style={{ width: 100, height: 75, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--gray-200)' }}
+              />
+            ))}
+          </div>
+        )}
       </Link>
 
       {post.tags?.length > 0 && (

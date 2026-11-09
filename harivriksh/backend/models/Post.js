@@ -4,7 +4,7 @@ const postSchema = new mongoose.Schema({
   author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   title: { type: String, required: true },
   content: { type: String, required: true },
-  category: { type: String, enum: ['tip', 'question', 'harvest', 'problem', 'general'], default: 'general' },
+  category: { type: String, enum: ['tip', 'question', 'harvest', 'problem', 'disease_solution', 'general'], default: 'general' },
   images: [String],
   plant: { type: mongoose.Schema.Types.ObjectId, ref: 'Plant' },
   tags: [String],
@@ -12,10 +12,12 @@ const postSchema = new mongoose.Schema({
   comments: [{
     author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     content: String,
+    isSolution: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
   }],
   views: { type: Number, default: 0 },
+  isSolved: { type: Boolean, default: false },
   isFeatured: { type: Boolean, default: false }
 }, { timestamps: true });
 

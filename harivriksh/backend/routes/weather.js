@@ -108,36 +108,58 @@ router.get('/', async (req, res) => {
     const current = data.current;
     const daily = data.daily;
 
+    const isRainingToday = (current.weather_code >= 51 && current.weather_code <= 82) || (current.precipitation > 0) || daily.precipitation_sum[0] > 0.5;
+    const shouldSkipWatering = isRainingToday || daily.precipitation_sum[0] > 1.0;
+
     const weatherInfo = WMO_CODES[current.weather_code] || { label: 'Unknown', icon: '🌡️' };
     const temp = current.temperature_2m;
     const humidity = current.relative_humidity_2m;
 
     // Build 5-day forecast
-    const forecast = daily.time.map((date, i) => ({
-      date,
-      maxTemp: Math.round(daily.temperature_2m_max[i]),
-      minTemp: Math.round(daily.temperature_2m_min[i]),
-      precipitation: daily.precipitation_sum[i],
-      weather: WMO_CODES[daily.weather_code[i]] || { label: 'Variable', icon: '🌤️' }
-    }));
+    const forecast = daily.time.map((date, i) => {
+      const precip = daily.precipitation_sum[i] || 0;
+      const wCode = daily.weather_code[i];
+      const rainExpected = precip > 0.5 || (wCode >= 51 && wCode <= 82);
+      return {
+        date,
+        maxTemp: Math.round(daily.temperature_2m_max[i]),
+        minTemp: Math.round(daily.temperature_2m_min[i]),
+        precipitation: precip,
+        rainExpected,
+        suggestedCare: rainExpected ? '🌧️ Skip Watering (Rain expected)' : temp > 35 ? '🔥 Water Early (Hot Day)' : '🌱 Standard Care',
+        weather: WMO_CODES[wCode] || { label: 'Variable', icon: '🌤️' }
+      };
+    });
 
     const farmingAdvice = getFarmingAdvice(temp, humidity, current.weather_code, city);
 
+    // Formatted location display name
+    let locationName = city || 'Current Location';
+    if (!city && lat && lon) {
+      locationName = `Your Location (${Number(lat).toFixed(2)}°, ${Number(lon).toFixed(2)}°)`;
+    }
+
     res.json({
       success: true,
-      city: city || `${lat}, ${lon}`,
+      city: locationName,
+      lat: parseFloat(lat),
+      lon: parseFloat(lon),
+      isRainingToday,
+      shouldSkipWatering,
+      rainAmountMm: current.precipitation || daily.precipitation_sum[0] || 0,
+      smartAction: shouldSkipWatering ? 'PAUSE_WATERING' : 'NORMAL_CARE',
       current: {
         temp: Math.round(temp),
         feelsLike: Math.round(current.apparent_temperature),
         humidity: Math.round(humidity),
         windSpeed: Math.round(current.wind_speed_10m),
-        precipitation: current.precipitation,
+        precipitation: current.precipitation || 0,
         weather: weatherInfo,
         updatedAt: current.time
       },
       forecast,
       farmingAdvice,
-      source: 'Open-Meteo (free, no API key required)'
+      source: 'Open-Meteo Weather Engine'
     });
 
   } catch (error) {

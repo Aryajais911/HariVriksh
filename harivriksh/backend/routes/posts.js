@@ -28,8 +28,8 @@ router.get('/', optionalAuth, async (req, res) => {
 // POST /api/posts
 router.post('/', protect, async (req, res) => {
   try {
-    const { title, content, category, plant, tags } = req.body;
-    const post = await Post.create({ author: req.user._id, title, content, category, plant, tags });
+    const { title, content, category, images, plant, tags } = req.body;
+    const post = await Post.create({ author: req.user._id, title, content, category, images, plant, tags });
     await post.populate('author', 'name avatar city');
     res.status(201).json({ success: true, post });
   } catch (error) {
@@ -76,6 +76,28 @@ router.post('/:id/comments', protect, async (req, res) => {
     await post.save();
     await post.populate('comments.author', 'name avatar');
     res.json({ success: true, comments: post.comments });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// POST /api/posts/:id/comments/:commentId/solution - Toggle Verified Solution
+router.post('/:id/comments/:commentId/solution', protect, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ success: false, message: 'Post not found' });
+    if (post.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Only post author can mark verified solution' });
+    }
+    const comment = post.comments.id(req.params.commentId);
+    if (!comment) return res.status(404).json({ success: false, message: 'Comment not found' });
+
+    comment.isSolution = !comment.isSolution;
+    post.isSolved = post.comments.some(c => c.isSolution);
+    await post.save();
+    await post.populate('comments.author', 'name avatar');
+
+    res.json({ success: true, post, isSolved: post.isSolved, isSolution: comment.isSolution });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
